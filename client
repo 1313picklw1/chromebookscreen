@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receiver - Screen Share</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #video {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Receiver - Waiting for Chromebook</h1>
+  <p>Click the button below to share your screen.</p>
+  <button id="shareScreenBtn">Start Screen Share</button>
+
+  <!-- Hidden audio element to play the beep sound -->
+  <audio id="beepAudio" src="beep.mp3"></audio>
+
+  <video id="video" autoplay></video>
+
+  <script>
+    // Create a peer connection (for WebRTC screen sharing)
+    const peerConnection = new RTCPeerConnection();
+
+    // Set up the button for screen sharing
+    const shareScreenBtn = document.getElementById('shareScreenBtn');
+
+    shareScreenBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        // Display the shared screen on the receiver's page
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+      } catch (error) {
+        console.error('Error sharing screen: ', error);
+      }
+    });
+
+    // Create a WebSocket connection to listen for the beep signal (from the sender)
+    const socket = new WebSocket('ws://localhost:8080');  // Assuming local WebSocket on the same network
+
+    // When a message is received from the sender, play the beep sound
+    socket.addEventListener('message', function(event) {
+      if (event.data === 'beep') {
+        const beepAudio = document.getElementById('beepAudio');
+        beepAudio.play();
+      }
+    });
+
+    // Send a message to the sender when the page loads
+    window.addEventListener('load', () => {
+      socket.send('receiver_ready');
+    });
+  </script>
+</body>
+</html>
